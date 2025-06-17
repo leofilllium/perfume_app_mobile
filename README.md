@@ -2,6 +2,9 @@
 
 A new Flutter project.
 
+Login: Ismigul
+Password: Ismigul
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
