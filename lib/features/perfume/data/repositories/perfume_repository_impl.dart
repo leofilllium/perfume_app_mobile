@@ -51,6 +51,34 @@ class PerfumeRepositoryImpl implements PerfumeRepository {
   }
 
   @override
+  Future<Either<Failure, RecommendedPerfumeList>> getRecommendedPerfumes({
+    int? page,
+    int? pageSize,
+  }) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final tokenEither = await getAuthToken();
+        String? token = tokenEither.fold((failure) => null, (t) => t);
+
+        if (token == null || token.isEmpty) {
+          return Left(ServerFailure(message: 'Authentication token is missing. Please log in.'));
+        }
+
+        final remoteRecommendations = await remoteDataSource.getRecommendedPerfumes(
+          page: page,
+          pageSize: pageSize,
+          token: token, // Pass token to data source
+        );
+        return Right(remoteRecommendations);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(message: e.message));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, OrderEntity>> placeOrder({
     required int perfumeId,
     required int quantity,

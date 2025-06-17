@@ -14,6 +14,12 @@ abstract class PerfumeRemoteDataSource {
     int? pageSize,
   });
 
+  Future<RecommendedPerfumeList> getRecommendedPerfumes({ // New method
+    required int? page,
+    required int? pageSize,
+    required String token, // Token is required for personalized recommendations
+  });
+
   // Updated to return Map<String, dynamic>
   Future<Map<String, dynamic>> placeOrder({
     required int perfumeId,
@@ -90,6 +96,46 @@ class PerfumeRemoteDataSourceImpl implements PerfumeRemoteDataSource {
         rethrow;
       }
       throw ServerException(message: 'Network error or unexpected response: $e'); // Generic error for unexpected issues
+    }
+  }
+
+  @override
+  Future<RecommendedPerfumeList> getRecommendedPerfumes({
+    int? page,
+    int? pageSize,
+    required String token,
+  }) async {
+    final Map<String, String> queryParams = {
+      'page': page?.toString() ?? '1',
+      'pageSize': pageSize?.toString() ?? '10',
+      'limit': '100', // As per React code, though not strictly needed if pageSize handles it
+    };
+
+    final uri = Uri.parse('$BASE_URL/parfume/for-you/recommendations').replace(queryParameters: queryParams);
+
+    final response = await client.get(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<PerfumeModel> perfumes = (data['perfumes'] as List)
+          .map((json) => PerfumeModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      return RecommendedPerfumeList(
+        perfumes: perfumes,
+        totalCount: data['totalCount'] as int,
+        currentPage: data['currentPage'] as int,
+        totalPages: data['totalPages'] as int,
+        hasCompletedQuiz: data['hasCompletedQuiz'] as bool, // Extract quiz status
+      );
+    } else {
+      throw ServerException(message: 'Failed to load recommended perfumes: ${response.statusCode} ${response.body}');
     }
   }
 

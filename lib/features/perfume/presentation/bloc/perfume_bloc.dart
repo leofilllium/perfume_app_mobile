@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:perfume_app_mobile/features/perfume/domain/entities/perfume.dart';
+import 'package:perfume_app_mobile/features/perfume/domain/usecases/get_recommended_perfumes.dart';
 import 'package:perfume_app_mobile/features/profile/data/models/order_model.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
@@ -13,9 +14,12 @@ const String SERVER_FAILURE_MESSAGE = 'Server Failure';
 const String CACHE_FAILURE_MESSAGE = 'Cache Failure';
 const String NETWORK_FAILURE_MESSAGE = 'Network Failure';
 const String UNAUTHORIZED_MESSAGE = 'Please log in to place an order.';
+const String UNAUTHORIZED_RECOMMENDATIONS_MESSAGE = 'Please log in to view personalized recommendations.';
+
 
 class PerfumeBloc extends Bloc<PerfumeEvent, PerfumeState> {
   final GetPerfumes getPerfumes;
+  final GetRecommendedPerfumes getRecommendedPerfumes;
   final PlaceOrder placeOrder;
   final PerfumeRepository perfumeRepository;
 
@@ -24,10 +28,12 @@ class PerfumeBloc extends Bloc<PerfumeEvent, PerfumeState> {
 
   PerfumeBloc({
     required this.getPerfumes,
+    required this.getRecommendedPerfumes,
     required this.placeOrder,
     required this.perfumeRepository,
   }) : super(PerfumeInitial()) {
     on<GetPerfumesEvent>(_onGetPerfumes);
+    on<GetRecommendedPerfumesEvent>(_onGetRecommendedPerfumes);
     on<PlaceOrderEvent>(_onPlaceOrder);
   }
 
@@ -97,6 +103,76 @@ class PerfumeBloc extends Bloc<PerfumeEvent, PerfumeState> {
           );
           emit(newState);
           _lastPerfumeLoadedState = newState; // Store the initial loaded state
+        }
+      },
+    );
+  }
+
+  Future<void> _onGetRecommendedPerfumes(
+      GetRecommendedPerfumesEvent event,
+      Emitter<PerfumeState> emit,
+      ) async {
+    // Determine if this is an initial load or fetching more
+    final isFetchingMore = state is PerfumeLoaded && event.page > 1 && (state as PerfumeLoaded).isRecommended;
+
+    if (!isFetchingMore) {
+      emit(PerfumeLoading()); // Only show full screen loader for initial load
+    } else if (state is PerfumeLoaded && (state as PerfumeLoaded).isFetchingMore) {
+      return; // Already fetching more, prevent duplicate requests
+    } else if (state is PerfumeLoaded && (state as PerfumeLoaded).hasReachedMax) {
+      return; // All items loaded, do nothing
+    } else if (state is PerfumeLoaded) {
+      // Indicate that more are being fetched at the bottom of the list
+      emit((state as PerfumeLoaded).copyWith(isFetchingMore: true));
+    }
+
+    final result = await getRecommendedPerfumes(GetRecommendedPerfumesParams(
+      page: event.page,
+      pageSize: event.pageSize,
+    ));
+
+    result.fold(
+          (failure) {
+        if (failure is ServerFailure && failure.message == UNAUTHORIZED_RECOMMENDATIONS_MESSAGE) {
+          emit(PerfumeError(message: UNAUTHORIZED_RECOMMENDATIONS_MESSAGE)); // Specific error for auth
+        } else if (isFetchingMore && state is PerfumeLoaded) {
+          emit((state as PerfumeLoaded).copyWith(isFetchingMore: false));
+        } else {
+          emit(PerfumeError(message: _mapFailureToMessage(failure)));
+        }
+      },
+          (recommendedPerfumeList) {
+        if (!recommendedPerfumeList.hasCompletedQuiz) {
+          emit(const QuizNotCompletedState());
+          return;
+        }
+
+        if (isFetchingMore && state is PerfumeLoaded) {
+          final currentPerfumes = (state as PerfumeLoaded).perfumeList.perfumes;
+          final updatedPerfumes = List<Perfume>.from(currentPerfumes)
+            ..addAll(recommendedPerfumeList.perfumes);
+
+          final hasReachedMax = recommendedPerfumeList.currentPage >= recommendedPerfumeList.totalPages;
+
+          emit(PerfumeLoaded(
+            perfumeList: PerfumeList(
+              perfumes: updatedPerfumes,
+              totalCount: recommendedPerfumeList.totalCount,
+              currentPage: recommendedPerfumeList.currentPage,
+              totalPages: recommendedPerfumeList.totalPages,
+            ),
+            hasReachedMax: hasReachedMax,
+            isFetchingMore: false,
+            isRecommended: true, // Mark as recommended perfumes
+          ));
+        } else {
+          final hasReachedMax = recommendedPerfumeList.currentPage >= recommendedPerfumeList.totalPages;
+          emit(PerfumeLoaded(
+            perfumeList: recommendedPerfumeList,
+            hasReachedMax: hasReachedMax,
+            isFetchingMore: false,
+            isRecommended: true, // Mark as recommended perfumes
+          ));
         }
       },
     );

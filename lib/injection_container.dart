@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
+import 'package:perfume_app_mobile/features/perfume/domain/usecases/get_recommended_perfumes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/network/network_info.dart';
@@ -72,10 +73,12 @@ Future<void> init() async {
       getPerfumes: sl(),
       placeOrder: sl(),
       perfumeRepository: sl(),
+          getRecommendedPerfumes: sl(),
     ),
   );
   // Use cases (existing)
   sl.registerLazySingleton(() => GetPerfumes(sl()));
+  sl.registerLazySingleton(() => GetRecommendedPerfumes(sl()));
   sl.registerLazySingleton(() => PlaceOrder(sl()));
   // Repository (existing)
   sl.registerLazySingleton<PerfumeRepository>(

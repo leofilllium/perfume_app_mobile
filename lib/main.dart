@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:perfume_app_mobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/pages/for_you_page.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/bloc/profile_event.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/pages/profile_page.dart';
@@ -57,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
   // List of pages to display
   final List<Widget> _pages = [
     const ShopPage(),
-    const Center(child: Text('For You Page (Coming Soon!)')), // Placeholder
+    const ForYouPage(), // Placeholder
     const ProfilePage(),
   ];
 

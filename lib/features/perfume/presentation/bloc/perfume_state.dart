@@ -20,11 +20,13 @@ class PerfumeLoaded extends PerfumeState {
   final PerfumeList perfumeList;
   final bool hasReachedMax; // Indicates if all pages have been loaded
   final bool isFetchingMore; // Indicates if more items are currently being fetched
+  final bool isRecommended;
 
   const PerfumeLoaded({
     required this.perfumeList,
     this.hasReachedMax = false,
     this.isFetchingMore = false,
+    this.isRecommended = false,
   });
 
   // Helper to create a new state with updated values
@@ -37,6 +39,7 @@ class PerfumeLoaded extends PerfumeState {
       perfumeList: perfumeList ?? this.perfumeList,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       isFetchingMore: isFetchingMore ?? this.isFetchingMore,
+      isRecommended: isRecommended ?? this.isRecommended,
     );
   }
 
@@ -73,3 +76,10 @@ class OrderError extends PerfumeState {
 }
 
 class OrderPlacing extends PerfumeState {}
+
+class QuizNotCompletedState extends PerfumeState {
+  const QuizNotCompletedState();
+
+  @override
+  List<Object> get props => [];
+}
