@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:perfume_app_mobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/recommendation/recommendation_bloc.dart';
 import 'package:perfume_app_mobile/features/perfume/presentation/pages/for_you_page.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/bloc/profile_event.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/pages/profile_page.dart';
-import 'features/perfume/presentation/bloc/perfume_bloc.dart';
+import 'features/perfume/presentation/bloc/perfume/perfume_bloc.dart';
 import 'features/perfume/presentation/pages/shop_page.dart';
 import 'injection_container.dart' as di;
 
@@ -33,7 +35,13 @@ class MyApp extends StatelessWidget {
             create: (_) => di.sl<PerfumeBloc>(),
           ),
           BlocProvider(
-            create: (_) => di.sl<ProfileBloc>(), // Provide ProfileBloc
+            create: (_) => di.sl<RecommendationBloc>(),
+          ),
+          BlocProvider(
+            create: (_) => di.sl<OrderBloc>(),
+          ),
+          BlocProvider(
+            create: (_) => di.sl<ProfileBloc>(),
           ),
           BlocProvider( // Provide AuthBloc
             create: (_) => di.sl<AuthBloc>(),

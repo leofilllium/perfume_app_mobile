@@ -1,7 +1,10 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
+import 'package:perfume_app_mobile/features/perfume/domain/usecases/get_perfume_details.dart';
 import 'package:perfume_app_mobile/features/perfume/domain/usecases/get_recommended_perfumes.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/recommendation/recommendation_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/network/network_info.dart';
@@ -13,7 +16,7 @@ import 'features/perfume/data/repositories/perfume_repository_impl.dart';
 import 'features/perfume/domain/repositories/perfume_repository.dart';
 import 'features/perfume/domain/usecases/get_perfumes.dart';
 import 'features/perfume/domain/usecases/place_order.dart';
-import 'features/perfume/presentation/bloc/perfume_bloc.dart';
+import 'features/perfume/presentation/bloc/perfume/perfume_bloc.dart';
 
 // Profile Feature Imports
 import 'features/profile/data/datasources/profile_local_data_source.dart'; // Reuse for AuthLocalDataSource
@@ -70,14 +73,25 @@ Future<void> init() async {
   // Bloc (existing)
   sl.registerFactory(
         () => PerfumeBloc(
-      getPerfumes: sl(),
-      placeOrder: sl(),
-      perfumeRepository: sl(),
-          getRecommendedPerfumes: sl(),
+          getPerfumes: sl(),
+          getPerfumeDetails: sl(),
+    ),
+  );
+  sl.registerFactory(
+        () => RecommendationBloc(
+            getRecommendedPerfumes: sl()
+
+    ),
+  );
+  sl.registerFactory(
+        () => OrderBloc(
+            placeOrder: sl(),
+            perfumeRepository: sl()
     ),
   );
   // Use cases (existing)
   sl.registerLazySingleton(() => GetPerfumes(sl()));
+  sl.registerLazySingleton(() => GetPerfumeDetails(sl()));
   sl.registerLazySingleton(() => GetRecommendedPerfumes(sl()));
   sl.registerLazySingleton(() => PlaceOrder(sl()));
   // Repository (existing)

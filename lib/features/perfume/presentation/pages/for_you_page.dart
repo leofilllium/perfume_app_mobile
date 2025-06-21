@@ -1,16 +1,17 @@
-// features/perfume/presentation/pages/for_you_page.dart
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:perfume_app_mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:perfume_app_mobile/features/auth/presentation/pages/auth_page.dart';
 import 'package:perfume_app_mobile/features/perfume/domain/entities/perfume.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_event.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_state.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/recommendation/recommendation_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/recommendation/recommendation_event.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/recommendation/recommendation_state.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/bloc/profile_event.dart';
-import '../../../../injection_container.dart';
-import '../bloc/perfume_bloc.dart';
-import '../bloc/perfume_event.dart';
-import '../bloc/perfume_state.dart';
 import '../widgets/order_modal.dart';
 import '../widgets/perfume_card.dart';
 
@@ -53,15 +54,15 @@ class _ForYouPageState extends State<ForYouPage> {
     if (isRefresh) {
       _currentPage = 1;
     }
-    BlocProvider.of<PerfumeBloc>(context).add(GetRecommendedPerfumesEvent(
+    BlocProvider.of<RecommendationBloc>(context).add(GetRecommendedPerfumesEvent(
       page: _currentPage,
       pageSize: _pageSize,
     ));
   }
 
   void _onScrollToEnd() {
-    final state = BlocProvider.of<PerfumeBloc>(context).state;
-    if (state is PerfumeLoaded && !state.hasReachedMax && !state.isFetchingMore && state.isRecommended) {
+  final state = BlocProvider.of<RecommendationBloc>(context).state;
+    if (state is RecommendedPerfumesLoaded && !state.hasReachedMax && !state.isFetchingMore) {
       _currentPage++;
       _fetchRecommendedPerfumes();
     }
@@ -74,14 +75,14 @@ class _ForYouPageState extends State<ForYouPage> {
       _isOrderLoading = false;
     });
 
-    final perfumeBloc = BlocProvider.of<PerfumeBloc>(context);
+    final orderBloc = BlocProvider.of<OrderBloc>(context);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return BlocProvider.value(
-          value: perfumeBloc,
-          child: BlocConsumer<PerfumeBloc, PerfumeState>(
+          value: orderBloc,
+          child: BlocConsumer<OrderBloc, OrderState>(
             listener: (context, state) {
               if (state is OrderSuccess) {
                 Navigator.of(context).pop();
@@ -105,7 +106,7 @@ class _ForYouPageState extends State<ForYouPage> {
               return OrderModal(
                 onSubmit: (quantity, message) {
                   if (_selectedPerfumeForOrder != null) {
-                    BlocProvider.of<PerfumeBloc>(context).add(PlaceOrderEvent(
+                    BlocProvider.of<OrderBloc>(context).add(PlaceOrderEvent(
                       orderedPerfume: _selectedPerfumeForOrder!,
                       quantity: quantity,
                       orderMessage: message,
@@ -182,9 +183,9 @@ class _ForYouPageState extends State<ForYouPage> {
         ),
         centerTitle: true,
       ),
-      body: BlocConsumer<PerfumeBloc, PerfumeState>(
+      body: BlocConsumer<RecommendationBloc, RecommendationState>(
         listener: (context, state) {
-          if (state is PerfumeError && state.message == UNAUTHORIZED_RECOMMENDATIONS_MESSAGE) {
+          if (state is RecommendationError && state.message == UNAUTHORIZED_RECOMMENDATIONS_MESSAGE) {
             // Handle unauthorized access specifically for recommendations
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
@@ -193,11 +194,11 @@ class _ForYouPageState extends State<ForYouPage> {
           }
         },
         builder: (context, state) {
-          if (state is PerfumeLoading) {
+          if (state is RecommendedPerfumesLoading) {
             return const Center(child: CupertinoActivityIndicator());
           } else if (state is QuizNotCompletedState) {
             return _buildQuizPrompt();
-          } else if (state is PerfumeLoaded && state.isRecommended) {
+          } else if (state is RecommendedPerfumesLoaded) {
             if (state.perfumeList.perfumes.isEmpty) {
               return const Center(
                 child: Text(
@@ -239,7 +240,7 @@ class _ForYouPageState extends State<ForYouPage> {
                 },
               ),
             );
-          } else if (state is PerfumeError) {
+          } else if (state is RecommendationError) {
             return Center(
               child: Text(
                 state.message,

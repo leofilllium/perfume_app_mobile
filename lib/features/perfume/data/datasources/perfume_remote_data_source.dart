@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:perfume_app_mobile/features/perfume/domain/entities/perfume.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/perfume_model.dart';
 import '../../domain/repositories/perfume_repository.dart';
@@ -14,11 +15,14 @@ abstract class PerfumeRemoteDataSource {
     int? pageSize,
   });
 
+  Future<Perfume> getPerfumeDetails({required int id});
+
   Future<RecommendedPerfumeList> getRecommendedPerfumes({ // New method
     required int? page,
     required int? pageSize,
     required String token, // Token is required for personalized recommendations
   });
+
 
   // Updated to return Map<String, dynamic>
   Future<Map<String, dynamic>> placeOrder({
@@ -96,6 +100,31 @@ class PerfumeRemoteDataSourceImpl implements PerfumeRemoteDataSource {
         rethrow;
       }
       throw ServerException(message: 'Network error or unexpected response: $e'); // Generic error for unexpected issues
+    }
+  }
+
+  @override
+  Future<Perfume> getPerfumeDetails({required int id}) async {
+    final uri = Uri.parse('$BASE_URL/parfume/$id');
+    try {
+      final response = await client.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return PerfumeModel.fromJson(data);
+      } else if (response.statusCode == 404) {
+        print('Server Exception: Not found (404)');
+        throw ServerException(message: 'Not found');
+      } else {
+        print('Server Exception: Failed to load perfume (${response.statusCode})');
+        throw ServerException(message: 'Failed to load perfume');
+      }
+    } catch (e) {
+      print('Error during API call in getPerfumeDetails: $e');
+      if (e is ServerException) rethrow;
+      throw ServerException(message: 'Network error or unexpected response: $e');
     }
   }
 

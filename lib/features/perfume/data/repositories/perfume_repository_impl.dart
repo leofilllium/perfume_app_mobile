@@ -51,6 +51,22 @@ class PerfumeRepositoryImpl implements PerfumeRepository {
   }
 
   @override
+  Future<Either<Failure, Perfume>> getPerfumeDetails({required int id}) async{
+    if (await networkInfo.isConnected) {
+      try {
+        final remotePerfumeDetails = await remoteDataSource.getPerfumeDetails(
+          id: id
+        );
+        return Right(remotePerfumeDetails);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(message: e.message));
+      }
+    } else {
+      return Left(NetworkFailure());
+    }
+  }
+
+  @override
   Future<Either<Failure, RecommendedPerfumeList>> getRecommendedPerfumes({
     int? page,
     int? pageSize,

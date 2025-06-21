@@ -4,8 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart'; // Add intl dependency to pubspec.yaml
 import 'package:perfume_app_mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:perfume_app_mobile/features/auth/presentation/pages/auth_page.dart';
-import 'package:perfume_app_mobile/features/perfume/presentation/bloc/perfume_bloc.dart';
-import 'package:perfume_app_mobile/features/perfume/presentation/bloc/perfume_state.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_state.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/perfume/perfume_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/perfume/perfume_state.dart';
 import 'package:perfume_app_mobile/features/perfume/presentation/widgets/perfume_image.dart';
 import 'package:perfume_app_mobile/features/profile/domain/entities/order.dart';
 import 'package:perfume_app_mobile/features/profile/presentation/widgets/modern_order_card.dart';
@@ -115,7 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
         },
         builder: (context, state) {
           // Add a BlocListener to listen for OrderSuccess from PerfumeBloc
-          return BlocListener<PerfumeBloc, PerfumeState>(
+          return BlocListener<OrderBloc, OrderState>(
             listener: (context, perfumeState) {
               if (perfumeState is OrderSuccess) {
                 // When an order is successfully placed, refresh the profile data

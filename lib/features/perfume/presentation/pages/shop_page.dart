@@ -2,9 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:perfume_app_mobile/features/perfume/domain/entities/perfume.dart';
-import '../bloc/perfume_bloc.dart';
-import '../bloc/perfume_event.dart';
-import '../bloc/perfume_state.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_bloc.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_event.dart';
+import 'package:perfume_app_mobile/features/perfume/presentation/bloc/order/order_state.dart';
+import '../bloc/perfume/perfume_bloc.dart';
+import '../bloc/perfume/perfume_event.dart';
+import '../bloc/perfume/perfume_state.dart';
 import '../widgets/order_modal.dart';
 import '../widgets/perfume_card.dart';
 
@@ -70,7 +73,7 @@ class _ShopPageState extends State<ShopPage> {
 
   void _onScrollToEnd() {
     final state = BlocProvider.of<PerfumeBloc>(context).state;
-    if (state is PerfumeLoaded && !state.hasReachedMax && !state.isFetchingMore) {
+    if (state is AllPerfumesLoaded && !state.hasReachedMax && !state.isFetchingMore) {
       _currentPage++;
       _fetchPerfumes();
     }
@@ -84,14 +87,14 @@ class _ShopPageState extends State<ShopPage> {
       _isOrderLoading = false;
     });
 
-    final perfumeBloc = BlocProvider.of<PerfumeBloc>(context);
+    final orderBloc = BlocProvider.of<OrderBloc>(context);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return BlocProvider.value(
-          value: perfumeBloc,
-          child: BlocConsumer<PerfumeBloc, PerfumeState>(
+          value: orderBloc,
+          child: BlocConsumer<OrderBloc, OrderState>(
             listener: (context, state) {
               if (state is OrderSuccess) {
                 // Dismiss the modal
@@ -121,7 +124,7 @@ class _ShopPageState extends State<ShopPage> {
               return OrderModal(
                 onSubmit: (quantity, message) {
                   if (_selectedPerfumeForOrder != null) {
-                    BlocProvider.of<PerfumeBloc>(context).add(PlaceOrderEvent(
+                    BlocProvider.of<OrderBloc>(context).add(PlaceOrderEvent(
                       orderedPerfume: _selectedPerfumeForOrder!,
                       quantity: quantity,
                       orderMessage: message,
@@ -268,9 +271,9 @@ class _ShopPageState extends State<ShopPage> {
           Expanded(
             child: BlocBuilder<PerfumeBloc, PerfumeState>(
               builder: (context, state) {
-                if (state is PerfumeLoading) {
+                if (state is AllPerfumesLoading) {
                   return const Center(child: CupertinoActivityIndicator());
-                } else if (state is PerfumeLoaded) {
+                } else if (state is AllPerfumesLoaded) {
                   if (state.perfumeList.perfumes.isEmpty) {
                     return const Center(
                       child: Text(

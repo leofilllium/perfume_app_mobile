@@ -60,6 +60,10 @@ abstract class PerfumeRepository {
     int? pageSize,
   });
 
+  Future<Either<Failure, Perfume>> getPerfumeDetails({
+    required int id
+  });
+
   Future<Either<Failure, OrderEntity>> placeOrder({
     required int perfumeId,
     required int quantity,
